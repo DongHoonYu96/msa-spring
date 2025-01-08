@@ -15,7 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/")
+@RequestMapping("/") // 모든 엔드포인트에 /user-service를 붙임, 게이트웨이에서 붙어서 요청이옴. 게이트웨이 필터로 강제삭제
 @RequiredArgsConstructor // final로 선언된 필드에 대해 생성자를 만들어줌
 public class UserController {
 
@@ -24,7 +24,7 @@ public class UserController {
 
     @GetMapping("/health_check")
     public String healthCheck() {
-        return "UserService I am OK";
+        return String.format("It's Working in User Service on PORT %s", env.getProperty("local.server.port"));
     }
 
     @GetMapping("/welcome")
