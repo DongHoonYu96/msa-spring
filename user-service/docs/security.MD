@@ -1,76 +1,50 @@
-# Spring Security 인증 과정의 전체 흐름
+# Spring Security 인증 과정의 이해
 
-1. **사용자 로그인 요청**
-    - 사용자의 로그인 정보(이메일/비밀번호) 서버 전송
+## 인증 처리 순서
 
-2. **AuthenticationFilter**
-   ```java
-   private Filter getAuthenticationFilter(AuthenticationManager authenticationManager) {
-       AuthenticationFilter authenticationFilter = new AuthenticationFilter();
-       authenticationFilter.setAuthenticationManager(authenticationManager);
-       return authenticationFilter;
-   }
-   ```
-    - HTTP 요청 가로채기 및 인증 처리 시작
-    - `AuthenticationManager`로의 인증 처리 위임
-
-3. **AuthenticationManager**
-   ```java
-   @Bean
-   public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) {
-       return authConfig.getAuthenticationManager();
-   }
-   ```
-    - 실제 인증 처리 매니저
-    - `AuthenticationProvider`를 통한 인증 수행
-
-4. **AuthenticationProvider**
-   ```java
-   @Bean
-   public DaoAuthenticationProvider authenticationProvider() {
-       DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
-       authProvider.setUserDetailsService(userService);
-       authProvider.setPasswordEncoder(bCryptPasswordEncoder);
-       return authProvider;
-   }
-   ```
-    - `UserDetailsService`를 통한 사용자 정보 조회
-    - `PasswordEncoder`를 통한 비밀번호 검증
-
-5. **UserDetailsService (UserService)**
+1. **attemptAuthentication (최초 진입점)**
+   - 클라이언트의 JSON 요청을 RequestLogin 객체로 변환
+   - UsernamePasswordAuthenticationToken 생성
    ```java
    @Override
-   public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-       UserEntity userEntity = userRepository.findByEmail(username)
-           .orElseThrow(() -> new UsernameNotFoundException(username));
-       
-       return new User(userEntity.getEmail(), 
-                      userEntity.getEncryptedPwd(), 
-                      true, true, true, true, 
-                      new ArrayList<>());
+   public Authentication attemptAuthentication(...) {
+       RequestLogin creds = new ObjectMapper()
+           .readValue(request.getInputStream(), RequestLogin.class);
+           
+       return getAuthenticationManager().authenticate(
+           new UsernamePasswordAuthenticationToken(
+               creds.getEmail(),
+               creds.getPassword(),
+               new ArrayList<>()
+           )
+       );
    }
    ```
-    - DB로부터의 사용자 정보 조회
-    - Spring Security 사용 가능한 UserDetails 객체로의 변환
 
-6. **인증 결과 처리**
-    - 인증 성공: JWT 토큰 생성 등 후속 처리
-    - 인증 실패: 예외 처리
+2. **AuthenticationManager**
+   - AuthenticationProvider 선택
+   - 인증 처리 위임
 
-이러한 과정을 통한 사용자 인증 수행과 SecurityFilterChain에서의 필터 순서 및 보안 설정 관리:
+3. **AuthenticationProvider**
+   - UserDetailsService 호출
+   - 비밀번호 검증
 
-```java
-@Bean
-public SecurityFilterChain filterChain(HttpSecurity http, AuthenticationManager authenticationManager) {
-    http
-            .csrf(csrf -> csrf.disable())
-            .authorizeHttpRequests(auth -> auth
-                    .requestMatchers("/**").permitAll()
-            )
-            .addFilter(getAuthenticationFilter(authenticationManager));
+4. **UserDetailsService**
+   - DB에서 사용자 정보 조회
+   - UserDetails 객체로 변환
 
-    return http.build();
-}
+5. **인증 결과 처리**
+   - 성공: JWT 토큰 생성
+   - 실패: 예외 처리
+
+## 핵심 컴포넌트 흐름
+```
+JSON 요청 → AuthenticationFilter(attemptAuthentication) 
+→ UsernamePasswordAuthenticationToken 생성 
+→ AuthenticationManager 
+→ AuthenticationProvider 
+→ UserDetailsService 
+→ 결과 처리
 ```
 
 # Spring Security 인증 URL 설정 방식 변화
@@ -115,3 +89,41 @@ public class WebSecurity {
 - SecurityFilterChain Bean 등록 방식으로 변경
 - 명시적 URL 설정 필요
 - 컴포넌트 기반의 설정으로 전환
+
+# 요약
+## 핵심 컴포넌트
+1. **attemptAuthentication**
+   - 로그인 요청을 가로채는 첫 번째 진입점
+   - 사용자가 제출한 아이디/비밀번호를 AuthenticationToken으로 변환
+
+2. **AuthenticationManager**
+   - 인증을 총괄하는 관리자
+   - 적절한 AuthenticationProvider 선택
+
+3. **AuthenticationProvider**
+   - 실제 인증 로직 수행
+   - UserDetailsService로 사용자 조회
+   - PasswordEncoder로 비밀번호 검증
+
+4. **UserDetailsService**
+   - DB에서 사용자 정보 조회
+   - Spring Security가 이해할 수 있는 UserDetails 객체로 변환
+
+## 인증 처리 순서
+1. 사용자 로그인 요청 (`/login`)
+2. AuthenticationFilter가 요청 가로챔
+3. AuthenticationManager에게 인증 위임
+4. AuthenticationProvider가 실제 인증 수행
+5. UserDetailsService로 사용자 정보 조회
+6. 인증 결과에 따른 처리 (JWT 토큰 생성 또는 에러 반환)
+
+## 버전별 차이점
+- 5.7 이전: WebSecurityConfigurerAdapter로 암묵적 설정
+- 5.7 이후: SecurityFilterChain으로 명시적 설정
+
+## 설정 코드 작성 순서
+1. SecurityFilterChain 구성
+2. AuthenticationManager Bean 등록
+3. AuthenticationProvider 설정
+4. UserDetailsService 구현
+5. 인증 성공/실패 핸들러 구현
