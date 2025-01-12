@@ -3,6 +3,9 @@ package org.example.userservice.security;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -53,15 +56,17 @@ public class AuthenticationFilter extends UsernamePasswordAuthenticationFilter {
     protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain, Authentication authResult)
             throws IOException, ServletException {
         String email = ((User) authResult.getPrincipal()).getUsername();
-        UserDto usersDetails = userService.getUsersDetailsByEmail(email);
+        UserDto userDetails = userService.getUsersDetailsByEmail(email);
 
-        String token = JWT.create()
-                .withSubject(usersDetails.getUserId())
-                .withExpiresAt(new Date(System.currentTimeMillis() + env.getProperty("token.expiration_time", Long.class)))
-                .sign(Algorithm.HMAC512(env.getProperty("token.secret")));
+        String token = Jwts.builder()
+                .setSubject(userDetails.getUserId())
+                .setExpiration(new Date(System.currentTimeMillis() +
+                        Long.parseLong(env.getProperty("token.expiration_time"))))
+                .signWith(SignatureAlgorithm.HS256, env.getProperty("token.secret"))
+                .compact();
 
         response.addHeader("token", token);
-        response.addHeader("userId", usersDetails.getUserId());
+        response.addHeader("userId", userDetails.getUserId());
         logger.info(token);
     }
 }
