@@ -1,5 +1,7 @@
 package org.example.userservice.security;
 
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.algorithms.Algorithm;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -18,6 +20,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Date;
 
 @RequiredArgsConstructor
 public class AuthenticationFilter extends UsernamePasswordAuthenticationFilter {
@@ -50,6 +53,15 @@ public class AuthenticationFilter extends UsernamePasswordAuthenticationFilter {
     protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain, Authentication authResult)
             throws IOException, ServletException {
         String email = ((User) authResult.getPrincipal()).getUsername();
-        UserDto userDetails = userService.getUsersDetailsByEmail(email);
+        UserDto usersDetails = userService.getUsersDetailsByEmail(email);
+
+        String token = JWT.create()
+                .withSubject(usersDetails.getUserId())
+                .withExpiresAt(new Date(System.currentTimeMillis() + env.getProperty("token.expiration_time", Long.class)))
+                .sign(Algorithm.HMAC512(env.getProperty("token.secret")));
+
+        response.addHeader("token", token);
+        response.addHeader("userId", usersDetails.getUserId());
+        logger.info(token);
     }
 }
