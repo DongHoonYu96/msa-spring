@@ -42,7 +42,7 @@ public class WebSecurity {
     }
 
     private Filter getAuthenticationFilter(AuthenticationManager authenticationManager) {
-        AuthenticationFilter authenticationFilter = new AuthenticationFilter();
+        AuthenticationFilter authenticationFilter = new AuthenticationFilter(userService, env);
         authenticationFilter.setAuthenticationManager(authenticationManager);
         authenticationFilter.setFilterProcessesUrl("/login"); // URL 지정
         return authenticationFilter;
