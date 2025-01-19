@@ -10,7 +10,6 @@ import org.example.userservice.vo.RequestUser;
 import org.example.userservice.vo.ResponseUser;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.convention.MatchingStrategies;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -29,7 +28,11 @@ public class UserController {
 
     @GetMapping("/health_check")
     public String healthCheck() {
-        return String.format("It's Working in User Service on PORT %s", env.getProperty("local.server.port"));
+        return String.format("It's Working in User Service on PORT"
+                + "\n, port(local.server.port)=" + env.getProperty("local.server.port")
+                + "\n, port(server.port)=" + env.getProperty("server.port")
+                + "\n, token secret=" + env.getProperty("token.secret")
+                + "\n, token expiration time=" + env.getProperty("token.expiration_time"));
     }
 
     @GetMapping("/welcome")
