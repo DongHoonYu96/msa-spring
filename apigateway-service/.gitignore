@@ -34,3 +34,5 @@ build/
 .vscode/
 
 application.yml
+bootstrap.yml
+*.yml
