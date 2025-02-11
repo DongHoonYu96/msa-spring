@@ -2,6 +2,7 @@ package org.example.userservice.controller;
 
 import jakarta.ws.rs.Path;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.bouncycastle.math.raw.Mod;
 import org.example.userservice.dto.UserDto;
 import org.example.userservice.jpa.UserEntity;
@@ -10,14 +11,18 @@ import org.example.userservice.vo.RequestUser;
 import org.example.userservice.vo.ResponseUser;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.convention.MatchingStrategies;
+import org.springframework.cloud.client.ServiceInstance;
+import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestTemplate;
 
 import java.util.ArrayList;
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequestMapping("/") // 모든 엔드포인트에 /user-service를 붙임, 게이트웨이에서 붙어서 요청이옴. 게이트웨이 필터로 강제삭제
 @RequiredArgsConstructor // final로 선언된 필드에 대해 생성자를 만들어줌
