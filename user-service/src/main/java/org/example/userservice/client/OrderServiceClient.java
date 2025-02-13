@@ -9,6 +9,6 @@ import java.util.List;
 
 @FeignClient(name = "order-service")
 public interface OrderServiceClient {
-    @GetMapping("{userId}/orders") //api gateway를 거치지 않음
+    @GetMapping("{userId}/orders_ng") //api gateway를 거치지 않음
     List<ResponseOrder> getOrders(@PathVariable String userId);
 }
