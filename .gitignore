@@ -1,0 +1,6 @@
+db
+jar
+kafka-data
+rabbitmq
+zookeeper-data
+rabbitmq-data
