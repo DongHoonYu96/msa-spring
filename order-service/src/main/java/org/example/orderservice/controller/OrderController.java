@@ -3,6 +3,7 @@ package org.example.orderservice.controller;
 import lombok.RequiredArgsConstructor;
 import org.example.orderservice.dto.OrderDto;
 import org.example.orderservice.jpa.OrderEntity;
+import org.example.orderservice.messagequeue.KafkaProducer;
 import org.example.orderservice.service.OrderService;
 import org.example.orderservice.vo.RequestOrder;
 import org.example.orderservice.vo.ResponseOrder;
@@ -22,6 +23,7 @@ import java.util.List;
 public class OrderController {
     private final Environment env;
     private final OrderService orderService;
+    private final KafkaProducer kafkaProducer;
 
     @GetMapping("/health_check")
     public String healthCheck() {
@@ -40,6 +42,9 @@ public class OrderController {
         OrderDto createdOrder = orderService.createOrder(orderDto);
 
         ResponseOrder responseOrder = modelMapper.map(createdOrder, ResponseOrder.class); // 응답용 DTO
+
+        // KafkaProducer를 통해 메시지 전송
+        kafkaProducer.send("example-catalog-topic", orderDto);
 
         return new ResponseEntity(responseOrder, HttpStatus.CREATED); // 201 Created
     }
