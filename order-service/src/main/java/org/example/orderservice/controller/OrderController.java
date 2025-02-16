@@ -44,18 +44,18 @@ public class OrderController {
         orderDto.setUserId(userId);
 
         /* jpa */
-//        orderDto.setUserId(userId);
-//        OrderDto createdOrder = orderService.createOrder(orderDto);
+        OrderDto createdOrder = orderService.createOrder(orderDto);
+        ResponseOrder responseOrder = modelMapper.map(createdOrder, ResponseOrder.class);
 
         /* kafka */
-        orderDto.setOrderId(UUID.randomUUID().toString()); // 랜덤 주문번호 생성
-        orderDto.setTotalPrice(order.getQty() * order.getUnitPrice());
+//        orderDto.setOrderId(UUID.randomUUID().toString()); // 랜덤 주문번호 생성
+//        orderDto.setTotalPrice(order.getQty() * order.getUnitPrice());
+//
+//        // KafkaProducer를 통해 메시지 전송
+//        kafkaProducer.send("example-catalog-topic", orderDto);
+//        orderProducer.send("orders", orderDto);
 
-        // KafkaProducer를 통해 메시지 전송
-        kafkaProducer.send("example-catalog-topic", orderDto);
-        orderProducer.send("orders", orderDto);
-
-        ResponseOrder responseOrder = modelMapper.map(orderDto, ResponseOrder.class);
+//        ResponseOrder responseOrder = modelMapper.map(orderDto, ResponseOrder.class);
 
         return new ResponseEntity(responseOrder, HttpStatus.CREATED); // 201 Created
     }
