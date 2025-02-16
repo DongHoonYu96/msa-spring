@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.example.orderservice.dto.OrderDto;
 import org.example.orderservice.jpa.OrderEntity;
 import org.example.orderservice.messagequeue.KafkaProducer;
+import org.example.orderservice.messagequeue.OrderProducer;
 import org.example.orderservice.service.OrderService;
 import org.example.orderservice.vo.RequestOrder;
 import org.example.orderservice.vo.ResponseOrder;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/")
@@ -24,6 +26,7 @@ public class OrderController {
     private final Environment env;
     private final OrderService orderService;
     private final KafkaProducer kafkaProducer;
+    private final OrderProducer orderProducer;
 
     @GetMapping("/health_check")
     public String healthCheck() {
@@ -39,12 +42,20 @@ public class OrderController {
 
         OrderDto orderDto = modelMapper.map(order, OrderDto.class);
         orderDto.setUserId(userId);
-        OrderDto createdOrder = orderService.createOrder(orderDto);
 
-        ResponseOrder responseOrder = modelMapper.map(createdOrder, ResponseOrder.class); // 응답용 DTO
+        /* jpa */
+//        orderDto.setUserId(userId);
+//        OrderDto createdOrder = orderService.createOrder(orderDto);
+
+        /* kafka */
+        orderDto.setOrderId(UUID.randomUUID().toString()); // 랜덤 주문번호 생성
+        orderDto.setTotalPrice(order.getQty() * order.getUnitPrice());
 
         // KafkaProducer를 통해 메시지 전송
         kafkaProducer.send("example-catalog-topic", orderDto);
+        orderProducer.send("orders", orderDto);
+
+        ResponseOrder responseOrder = modelMapper.map(orderDto, ResponseOrder.class);
 
         return new ResponseEntity(responseOrder, HttpStatus.CREATED); // 201 Created
     }
