@@ -1,5 +1,6 @@
 package org.example.userservice.controller;
 
+import io.micrometer.core.annotation.Timed;
 import jakarta.ws.rs.Path;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,6 +33,7 @@ public class UserController {
     private final UserService userService;
 
     @GetMapping("/health_check")
+    @Timed(value = "users.status", longTask = true)
     public String healthCheck() {
         return String.format("It's Working in User Service on PORT"
                 + "\n, port(local.server.port)=" + env.getProperty("local.server.port")
@@ -41,6 +43,7 @@ public class UserController {
     }
 
     @GetMapping("/welcome")
+    @Timed(value = "users.welcome", longTask = true)
     public String welcome() {
         return env.getProperty("greeting.message");
     }
