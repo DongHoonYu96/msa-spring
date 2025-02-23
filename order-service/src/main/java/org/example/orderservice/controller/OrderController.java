@@ -1,6 +1,7 @@
 package org.example.orderservice.controller;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.example.orderservice.dto.OrderDto;
 import org.example.orderservice.jpa.OrderEntity;
 import org.example.orderservice.messagequeue.KafkaProducer;
@@ -22,6 +23,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/")
 @RequiredArgsConstructor
+@Slf4j
 public class OrderController {
     private final Environment env;
     private final OrderService orderService;
@@ -37,6 +39,7 @@ public class OrderController {
     public ResponseEntity createUser(
             @PathVariable("userId") String userId,
             @RequestBody RequestOrder order) {
+        log.info("Before add orders data");
         ModelMapper modelMapper = new ModelMapper();
         modelMapper.getConfiguration().setMatchingStrategy(MatchingStrategies.STRICT);
 
@@ -56,18 +59,27 @@ public class OrderController {
 //        orderProducer.send("orders", orderDto);
 
 //        ResponseOrder responseOrder = modelMapper.map(orderDto, ResponseOrder.class);
-
+        log.info("After add orders data");
         return new ResponseEntity(responseOrder, HttpStatus.CREATED); // 201 Created
     }
 
     @GetMapping("/{userId}/orders")
-    public ResponseEntity getOrder(@PathVariable("userId") String userId) {
+    public ResponseEntity getOrder(@PathVariable("userId") String userId) throws Exception {
+        log.info("Before retrieve orders data");
         Iterable<OrderEntity> orderList = orderService.getOrdersByUserId(userId);
+
+        try{
+            Thread.sleep(1000);
+            throw new Exception("장애 발생");
+        } catch (InterruptedException ex){
+            log.warn(ex.getMessage());
+        }
 
         List<ResponseOrder> result = new ArrayList<>();
         orderList.forEach(order->{
             result.add(new ModelMapper().map(order,ResponseOrder.class));
         });
+        log.info("After retrieve orders data");
 
         return new ResponseEntity(result, HttpStatus.OK);
 

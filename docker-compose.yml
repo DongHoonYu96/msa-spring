@@ -96,6 +96,21 @@ services:
     networks: 
       my-network:
 
+  zipkin:
+    image: openzipkin/zipkin:latest
+    container_name: zipkin
+    restart: always
+    ports:
+      - "9411:9411"
+    environment:
+      - STORAGE_TYPE=mem  # 메모리 스토리지 사용 (프로덕션에서는 elasticsearch 권장)
+    depends_on:
+      - kafka  # Kafka를 통한 추적 데이터 수집 시
+      - rabbitmq  # RabbitMQ를 통한 추적 데이터 수집 시
+    networks: 
+      my-network:
+        ipv4_address: 172.18.0.105
+
 networks: 
   my-network:
     external: true
